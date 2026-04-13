@@ -1,0 +1,9 @@
+{
+  "model": "paraformer-zh",
+  "vadModel": "fsmn-vad",
+  "puncModel": "ct-punc",
+  "device": "cpu",
+  "host": "127.0.0.1",
+  "port": 47831,
+  "autoDownloadModels": true
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.aiannotoke.voicepunish.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "MicrophoneHandlerMixin",
+    "SpeechRecognizerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

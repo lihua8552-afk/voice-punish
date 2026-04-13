@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "voicepunish",
+  "version": "${version}",
+  "name": "Voice Punish",
+  "description": "LAN voice moderation add-on for Simple Voice Chat and Shriek.",
+  "authors": [
+    "AiannoToke"
+  ],
+  "contact": {
+    "sources": "local",
+    "qq": "2401742586"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.aiannotoke.voicepunish.VoicePunishMod"
+    ],
+    "client": [
+      "com.aiannotoke.voicepunish.VoicePunishClient"
+    ],
+    "voicechat": [
+      "com.aiannotoke.voicepunish.VoicePunishVoicechatPlugin"
+    ]
+  },
+  "mixins": [
+    "voicepunish.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": ">=${fabric_api_min_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "voicechat_api": ">=${voicechat_api_min_version}",
+    "shriek": "*",
+    "architectury": "*"
+  }
+}

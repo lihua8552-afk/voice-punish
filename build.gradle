@@ -1,0 +1,213 @@
+plugins {
+    id 'fabric-loom' version '1.14.7'
+}
+
+version = mod_version
+group = maven_group
+
+base {
+    archivesName = archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev/'
+    }
+    maven {
+        name = 'Henkelmax Public'
+        url = 'https://maven.maxhenkel.de/repository/public'
+    }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
+}
+
+loom {
+    enableModProvidedJavadoc = false
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings "net.fabricmc:yarn:${yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    modImplementation "dev.architectury:architectury-fabric:${architectury_version}"
+
+    implementation "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+    modRuntimeOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}:fabric-stub"
+
+    modImplementation "maven.modrinth:shriek:${shriek_version}"
+    modRuntimeOnly "maven.modrinth:simple-voice-chat:${voicechat_mod_version}"
+
+    testImplementation platform("org.junit:junit-bom:5.10.2")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+def packageEmbeddedAsrService = tasks.register('packageEmbeddedAsrService', Zip) {
+    archiveFileName = 'asr-service.zip'
+    destinationDirectory = layout.buildDirectory.dir('generated/embeddedAsr/windows-x64')
+    zip64 = true
+    from('asr-service') {
+        exclude '__pycache__/**'
+        exclude 'runtime/**'
+        exclude 'model-cache/**'
+        exclude '*.log'
+    }
+}
+
+processResources {
+    inputs.property 'version', version
+    inputs.property 'minecraft_version', minecraft_version
+    inputs.property 'loader_version', loader_version
+    inputs.property 'fabric_version', fabric_version
+    inputs.property 'fabric_api_min_version', fabric_api_min_version
+    inputs.property 'voicechat_api_version', voicechat_api_version
+    inputs.property 'voicechat_api_min_version', voicechat_api_min_version
+
+    filesMatching('fabric.mod.json') {
+        expand(
+                version: version,
+                minecraft_version: minecraft_version,
+                loader_version: loader_version,
+                fabric_version: fabric_version,
+                fabric_api_min_version: fabric_api_min_version,
+                voicechat_api_version: voicechat_api_version,
+                voicechat_api_min_version: voicechat_api_min_version
+        )
+    }
+
+    from(packageEmbeddedAsrService) {
+        into 'voicepunish/asr/windows-x64'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+
+tasks.withType(Jar).configureEach {
+    zip64 = true
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+def offlineInstallerDir = layout.buildDirectory.dir("offline-installer/${archives_base_name}-offline-${version}")
+def portableClientRootName = "1.21.11生存rpg"
+def portableClientDir = layout.buildDirectory.dir("portable-client/${portableClientRootName}")
+
+def prepareOfflineInstaller = tasks.register('prepareOfflineInstaller', Copy) {
+    dependsOn tasks.named('remapJar')
+    into offlineInstallerDir
+
+    from('installer/windows') {
+        filter { line ->
+            line
+                    .replace('__VERSION__', version.toString())
+                    .replace('__ARCHIVES_BASE_NAME__', archives_base_name.toString())
+        }
+    }
+    from(tasks.named('remapJar')) {
+        into 'mods'
+    }
+    from('asr-service') {
+        into 'offline-asr/app'
+        exclude '__pycache__/**'
+        exclude 'runtime/**'
+        exclude 'model-cache/**'
+        exclude '*.log'
+    }
+    from('asr-service/runtime/python310') {
+        into 'offline-asr/runtime/python310'
+    }
+    from('asr-service/model-cache') {
+        into 'offline-asr/model-cache'
+    }
+}
+
+tasks.register('packageOfflineInstaller', Zip) {
+    dependsOn prepareOfflineInstaller
+    archiveFileName = "${archives_base_name}-offline-installer-${version}.zip"
+    destinationDirectory = layout.buildDirectory.dir('installer')
+    zip64 = true
+    from(offlineInstallerDir)
+}
+
+def preparePortablePclClient = tasks.register('preparePortablePclClient', Copy) {
+    dependsOn tasks.named('remapJar')
+    into portableClientDir
+
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/Plain Craft Launcher 2.exe')
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/PCL.ini')
+    from('portable-client/launcher_profiles.json')
+    from('portable-client/README_PORTABLE_CLIENT.txt')
+
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/PCL') {
+        exclude 'Log*.txt'
+        exclude 'LatestLaunch.bat'
+    }
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/assets') {
+        into 'assets'
+    }
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/libraries') {
+        into 'libraries'
+    }
+    from('C:/Users/24017/AppData/Roaming/.minecraft/runtime/java-runtime-delta') {
+        into 'runtime/java-runtime-delta'
+    }
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/versions/1.21.11-Fabric 0.19.1') {
+        into 'versions/1.21.11-Fabric 0.19.1'
+        exclude 'logs/**'
+        exclude 'crash-reports/**'
+        exclude 'saves/**'
+        exclude 'downloads/**'
+        exclude 'PCL/**'
+        exclude 'mods/**'
+    }
+    from('C:/Users/24017/Desktop/mc/1.21.11生存rpg/versions/1.21.11-Fabric 0.19.1/mods') {
+        into 'versions/1.21.11-Fabric 0.19.1/mods'
+        include 'architectury-fabric-19.0.1.jar'
+        include 'fabric-api-0.141.3+1.21.11.jar'
+        include 'shriek-1.1.2+fabric.jar'
+        include '*voicechat*.jar'
+    }
+    from(tasks.named('remapJar')) {
+        into 'versions/1.21.11-Fabric 0.19.1/mods'
+    }
+    from('asr-service') {
+        into "versions/1.21.11-Fabric 0.19.1/voicepunish-offline/embedded/${version}/app"
+        exclude '__pycache__/**'
+        exclude 'runtime/**'
+        exclude 'model-cache/**'
+        exclude '*.log'
+    }
+    from('asr-service/runtime/python310') {
+        into "versions/1.21.11-Fabric 0.19.1/voicepunish-offline/embedded/${version}/runtime/python310"
+    }
+    from('asr-service/model-cache') {
+        into "versions/1.21.11-Fabric 0.19.1/voicepunish-offline/embedded/${version}/model-cache"
+    }
+}
+
+tasks.register('packagePortablePclClient', Zip) {
+    dependsOn preparePortablePclClient
+    archiveFileName = "${archives_base_name}-pcl-portable-client-${version}.zip"
+    destinationDirectory = layout.buildDirectory.dir('portable-dist')
+    zip64 = true
+    from(portableClientDir)
+}

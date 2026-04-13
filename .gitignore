@@ -1,0 +1,57 @@
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/
+*.swp
+*.swo
+*.class
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Build outputs
+bin/
+dist/
+out/
+target/
+*.jar
+*.war
+*.ear
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE runtime
+.runtime/
+runtime/
+
+# Local ASR runtime cache
+asr-service/model-cache/
